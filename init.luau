@@ -173,6 +173,14 @@ function Emitter.new(parent: Part, camera: Camera): Emitter
 	self._accumulator = 0
 	self._camera = camera
 
+	self._updateConnection = RunService.PreRender:Connect(function(dt: number)
+		if self._enabled then
+			self:_emit(dt)
+		end
+
+		Emitter._update(self :: Emitter, dt)
+	end)
+
 	return self :: Emitter
 end
 
@@ -214,6 +222,14 @@ function Emitter.fromParticleEmitter(particle: ParticleEmitter, parent: Part, ca
 	self._accumulator = 0
 	self._camera = camera
 
+	self._updateConnection = RunService.PreRender:Connect(function(dt: number)
+		if self._enabled then
+			self:_emit(dt)
+		end
+
+		Emitter._update(self :: Emitter, dt)
+	end)
+
 	return self :: Emitter
 end
 
@@ -221,7 +237,7 @@ function Emitter._emit(self: Emitter, dt: number)
 	self._accumulator += dt
 
 	if self._accumulator >= 1 / self.Rate or dt == 0 then
-		self._accumulator -= dt ~= 0 and (1 / self.Rate) or 0
+		self._accumulator -= (dt ~= 0 and (1 / self.Rate) or 0)
 
 		local part = Instance.new("Part")
 		part.Anchored = true
@@ -327,14 +343,6 @@ end
 
 function Emitter.Start(self: Emitter)
 	self._enabled = true
-
-	self._updateConnection = RunService.PreRender:Connect(function(dt: number)
-		if self._enabled then
-			self:_emit(dt)
-		end
-
-		self:_update(dt)
-	end)
 end
 
 function Emitter.Emit(self: Emitter, amount: number)
