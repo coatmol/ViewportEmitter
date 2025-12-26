@@ -4,6 +4,15 @@ local RunService = game:GetService("RunService")
 local Emitter = {}
 Emitter.__index = Emitter
 
+local EmissionDirections: { [Enum.NormalId]: Vector3 } = {
+	[Enum.NormalId.Top] = Vector3.new(0, 1, 0),
+	[Enum.NormalId.Bottom] = Vector3.new(0, -1, 0),
+	[Enum.NormalId.Left] = Vector3.new(-1, 0, 0),
+	[Enum.NormalId.Right] = Vector3.new(1, 0, 0),
+	[Enum.NormalId.Front] = Vector3.new(0, 0, -1),
+	[Enum.NormalId.Back] = Vector3.new(0, 0, 1),
+}
+
 type Particle = {
 	_instance: Part,
 	_decal: Decal,
@@ -19,7 +28,7 @@ export type Emitter = {
 	Brightness: number,
 	Color: ColorSequence,
 	Drag: number,
-	EmissionDirection: Enum.NormalId, -- NOT IMPLEMENTED
+	EmissionDirection: Enum.NormalId,
 	FlipbookFramerate: NumberRange, -- NOT IMPLEMENTED
 	FlipbookIncompatible: string, -- NOT IMPLEMENTED
 	FlipbookLayout: Enum.ParticleFlipbookLayout, -- NOT IMPLEMENTED
@@ -91,6 +100,31 @@ local function sampleColorSequence(seq: ColorSequence, alpha: number): Color3
 	end
 
 	return keypoints[#keypoints].Value
+end
+
+local function rotateVectorTo(v: Vector3, dir: Vector3): Vector3
+	-- v: vector in local space (+Y = forward)
+	-- dir: desired forward direction (emissionDir)
+	if dir.Magnitude == 0 then
+		return v
+	end
+
+	dir = dir.Unit
+	local rotationAxis = Vector3.new(0, 1, 0):Cross(dir)
+	local dot = Vector3.new(0, 1, 0):Dot(dir)
+
+	-- If forward is already aligned, no rotation needed
+	if rotationAxis.Magnitude < 0.0001 then
+		return v * dot
+	end
+
+	rotationAxis = rotationAxis.Unit
+	local angle = math.acos(dot)
+
+	-- Rodrigues' rotation formula
+	return v * math.cos(angle)
+		+ rotationAxis:Cross(v) * math.sin(angle)
+		+ rotationAxis * rotationAxis:Dot(v) * (1 - math.cos(angle))
 end
 
 -- // CLASS \\ --
@@ -187,11 +221,7 @@ function Emitter._emit(self: Emitter, dt: number)
 		part.Anchored = true
 		part.CanCollide = false
 		part.Transparency = 1
-
-		local size = sampleNumberSequence(self.Transparency, 0)
-		part.Size = Vector3.one * size
-		local rot = math.random() * (self.Rotation.Max - self.Rotation.Min) + self.Rotation.Min
-		part.Rotation = Vector3.new(0, rot, 0)
+		part.Size = Vector3.one * sampleNumberSequence(self.Transparency, 0)
 		part.Parent = self._parent
 
 		local decal = Instance.new("Decal")
@@ -201,11 +231,19 @@ function Emitter._emit(self: Emitter, dt: number)
 		decal.Face = Enum.NormalId.Front
 		decal.Parent = part
 
-		local theta = math.rad(math.random() * self.SpreadAngle.X)
-		local phi = math.rad(math.random() * self.SpreadAngle.Y)
+		local rot = math.random() * (self.Rotation.Max - self.Rotation.Min) + self.Rotation.Min
+		part.Rotation = Vector3.new(0, rot, 0)
 
-		local dir = Vector3.new(math.cos(theta) * math.sin(phi), math.cos(phi), math.sin(theta) * math.sin(phi))
+		local emissionDir = EmissionDirections[self.EmissionDirection].Unit
 
+		local theta = math.rad((math.random() - 0.5) * self.SpreadAngle.X) -- horizontal
+		local phi = math.rad((math.random() - 0.5) * self.SpreadAngle.Y) -- vertical
+
+		local localDir = Vector3.new(math.sin(phi) * math.cos(theta), math.cos(phi), math.sin(phi) * math.sin(theta))
+
+		local dir = rotateVectorTo(localDir, emissionDir).Unit
+
+		-- Speed, lifetime, rotation speed
 		local speed = math.random() * (self.Speed.Max - self.Speed.Min) + self.Speed.Min
 		local life = math.random() * (self.Lifetime.Max - self.Lifetime.Min) + self.Lifetime.Min
 		local rotSpeed = math.random() * (self.RotSpeed.Max - self.RotSpeed.Min) + self.RotSpeed.Min
