@@ -29,7 +29,7 @@ export type Emitter = {
 	FlipbookStartRandom: boolean, -- NOT IMPLEMENTED
 	Lifetime: NumberRange,
 	LockedToPart: boolean, -- NOT IMPLEMENTED
-	Orientation: Enum.ParticleOrientation, -- NOT IMPLEMENTED
+	Orientation: Enum.ParticleOrientation,
 	Rate: number,
 	Rotation: NumberRange,
 	RotSpeed: NumberRange,
@@ -240,10 +240,36 @@ function Emitter._update(self: Emitter, dt: number)
 
 			particle._instance.Size = Vector3.one * sampleNumberSequence(self.Size, particle._age / particle._life)
 
-			local lookCFrame = CFrame.lookAt(particle._instance.Position, self._camera.CFrame.Position)
 			particle._prevRot += particle._rotSpeed * self.TimeScale * dt
-			local rotation = CFrame.Angles(0, 0, particle._prevRot)
-			particle._instance.CFrame = lookCFrame * rotation
+			local lookCFrame = CFrame.lookAt(particle._instance.Position, self._camera.CFrame.Position)
+			if self.Orientation == Enum.ParticleOrientation.FacingCamera then
+				local rotation = CFrame.Angles(0, 0, particle._prevRot)
+				particle._instance.CFrame = lookCFrame * rotation
+			elseif self.Orientation == Enum.ParticleOrientation.FacingCameraWorldUp then
+				-- Faces camera, world-up alignment
+				lookCFrame = CFrame.lookAt(
+					particle._instance.Position,
+					self._camera.CFrame.Position,
+					Vector3.new(0, 1, 0) -- world up
+				)
+				particle._instance.CFrame = lookCFrame * CFrame.Angles(0, 0, particle._prevRot)
+			elseif self.Orientation == Enum.ParticleOrientation.VelocityParallel then
+				if particle._velocity.Magnitude > 0 then
+					local forward = particle._velocity.Unit
+					local up = Vector3.new(0, 1, 0)
+					if math.abs(forward:Dot(up)) > 0.99 then
+						up = Vector3.new(1, 0, 0)
+					end
+					lookCFrame = CFrame.fromMatrix(particle._instance.Position, forward, up)
+					particle._instance.CFrame = lookCFrame * CFrame.Angles(0, 0, particle._prevRot)
+				end
+			elseif self.Orientation == Enum.ParticleOrientation.VelocityPerpendicular then
+				if particle._velocity.Magnitude > 0 then
+					lookCFrame =
+						CFrame.lookAt(particle._instance.Position, particle._instance.Position + particle._velocity)
+					particle._instance.CFrame = lookCFrame * CFrame.Angles(0, 0, particle._prevRot)
+				end
+			end
 
 			particle._decal.Transparency = sampleNumberSequence(self.Transparency, particle._age / particle._life)
 			particle._decal.Color3 = sampleColorSequence(self.Color, particle._age / particle._life)
