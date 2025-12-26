@@ -14,8 +14,6 @@ A Luau library for rendering particle effects in Roblox ViewportFrames. Viewport
 ## Limitations
 
 - **Missing properties** - Some properties are not supported due to limitations in the underlying ParticleEmitter implementation. These properties are highlighted in the [API Reference](#api-reference).
-- **Performance** - Performance is optimized for rendering particles in ViewportFrames, but may not be optimal for other use cases.
-- **No external dependencies** - The library does not require any external dependencies or modules.
 
 ## Installation
 
@@ -127,6 +125,7 @@ Stops the emitter and cleans up all particles and connections.
 
 Some ParticleEmitter features are not yet implemented:
 
+- Brightness (Possibly impossible??)
 - Flipbook animations
 - Shape-based emission
 - LockedToPart behavior
