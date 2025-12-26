@@ -1,4 +1,10 @@
 --!strict
+--[[
+	ViewportEmitter
+	Author: @Coatmol (@wShadowRBLX)
+	License: MIT
+]]
+
 local RunService = game:GetService("RunService")
 
 local Emitter = {}
