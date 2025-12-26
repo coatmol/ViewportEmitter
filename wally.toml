@@ -1,0 +1,11 @@
+[package]
+name = "coatmol/viewportemitter"
+description = "render particles in ViewportFrames"
+version = "1.0.0"
+license = "MIT"
+authors = ["Coatmol"]
+registry = "https://github.com/UpliftGames/wally-index"
+realm = "shared"
+exclude = ["rokit.toml", "selene.toml", "README.md", ".gitignore"]
+
+[dependencies]
