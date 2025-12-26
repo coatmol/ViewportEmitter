@@ -49,7 +49,7 @@ export type Emitter = {
 	Size: NumberSequence,
 	Speed: NumberRange,
 	SpreadAngle: Vector2,
-	Squash: NumberSequence, -- NOT IMPLEMENTED
+	Squash: NumberSequence, -- BASIC IMPLEMENTATION
 	Texture: string,
 	TimeScale: number,
 	Transparency: NumberSequence,
