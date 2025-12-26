@@ -16,7 +16,7 @@ export type Emitter = {
 	Acceleration: Vector3,
 	Brightness: number,
 	Color: ColorSequence,
-	Drag: number, -- NOT IMPLEMENTED
+	Drag: number,
 	EmissionDirection: Enum.NormalId, -- NOT IMPLEMENTED
 	FlipbookFramerate: NumberRange, -- NOT IMPLEMENTED
 	FlipbookIncompatible: string, -- NOT IMPLEMENTED
@@ -43,7 +43,7 @@ export type Emitter = {
 	TimeScale: number,
 	Transparency: NumberSequence,
 	VelocityInheritance: number, -- NOT IMPLEMENTED
-	WindAffectsDrag: boolean, -- NOT IMPLEMENTED
+	WindAffectsDrag: boolean,
 
 	_particles: { Particle },
 	_parent: Part,
@@ -122,6 +122,7 @@ function Emitter.new(parent: Part, camera: Camera): Emitter
 	self.Texture = "rbxasset://textures/particles/sparkles_main.dds"
 	self.TimeScale = 1
 	self.Transparency = NumberSequence.new(0, 0)
+	self.WindAffectsDrag = false
 
 	-- Initialize internal properties
 	self._particles = {}
@@ -162,6 +163,7 @@ function Emitter.fromParticleEmitter(particle: ParticleEmitter, parent: Part, ca
 	self.Texture = particle.Texture
 	self.TimeScale = particle.TimeScale
 	self.Transparency = particle.Transparency
+	self.WindAffectsDrag = particle.WindAffectsDrag
 
 	-- Initialize internal properties
 	self._particles = {}
@@ -221,7 +223,14 @@ function Emitter._update(self: Emitter, dt: number)
 			particle._instance:Destroy()
 			table.remove(self._particles, i)
 		else
-			particle._instance.Position += particle._velocity * dt * self.TimeScale
+			particle._velocity *= 1 - self.Drag * dt
+
+			if self.WindAffectsDrag then
+				particle._velocity += workspace.GlobalWind * dt
+			end
+
+			particle._instance.Position += particle._velocity * self.TimeScale * dt
+
 			particle._instance.Size = Vector3.one * sampleNumberSequence(self.Size, particle._age / particle._life)
 			particle._instance.CFrame = CFrame.lookAt(particle._instance.Position, self._camera.CFrame.Position)
 
