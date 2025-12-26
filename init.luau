@@ -8,6 +8,8 @@ type Particle = {
 	_instance: Part,
 	_decal: Decal,
 	_velocity: Vector3,
+	_rotSpeed: number,
+	_prevRot: number,
 	_life: number,
 	_age: number,
 }
@@ -188,6 +190,8 @@ function Emitter._emit(self: Emitter, dt: number)
 
 		local size = sampleNumberSequence(self.Transparency, 0)
 		part.Size = Vector3.one * size
+		local rot = math.random() * (self.Rotation.Max - self.Rotation.Min) + self.Rotation.Min
+		part.Rotation = Vector3.new(0, rot, 0)
 		part.Parent = self._parent
 
 		local decal = Instance.new("Decal")
@@ -204,11 +208,14 @@ function Emitter._emit(self: Emitter, dt: number)
 
 		local speed = math.random() * (self.Speed.Max - self.Speed.Min) + self.Speed.Min
 		local life = math.random() * (self.Lifetime.Max - self.Lifetime.Min) + self.Lifetime.Min
+		local rotSpeed = math.random() * (self.RotSpeed.Max - self.RotSpeed.Min) + self.RotSpeed.Min
 
 		table.insert(self._particles, {
 			_instance = part,
 			_decal = decal,
 			_velocity = dir * speed,
+			_rotSpeed = rotSpeed,
+			_prevRot = rot,
 			_life = life,
 			_age = 0,
 		})
@@ -232,7 +239,11 @@ function Emitter._update(self: Emitter, dt: number)
 			particle._instance.Position += particle._velocity * self.TimeScale * dt
 
 			particle._instance.Size = Vector3.one * sampleNumberSequence(self.Size, particle._age / particle._life)
-			particle._instance.CFrame = CFrame.lookAt(particle._instance.Position, self._camera.CFrame.Position)
+
+			local lookCFrame = CFrame.lookAt(particle._instance.Position, self._camera.CFrame.Position)
+			particle._prevRot += particle._rotSpeed * self.TimeScale * dt
+			local rotation = CFrame.Angles(0, 0, particle._prevRot)
+			particle._instance.CFrame = lookCFrame * rotation
 
 			particle._decal.Transparency = sampleNumberSequence(self.Transparency, particle._age / particle._life)
 			particle._decal.Color3 = sampleColorSequence(self.Color, particle._age / particle._life)
