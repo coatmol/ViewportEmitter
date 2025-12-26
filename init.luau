@@ -221,7 +221,8 @@ function Emitter._emit(self: Emitter, dt: number)
 		part.Anchored = true
 		part.CanCollide = false
 		part.Transparency = 1
-		part.Size = Vector3.one * sampleNumberSequence(self.Transparency, 0)
+		local squash = sampleNumberSequence(self.Squash, 0)
+		part.Size = Vector3.new(1 + squash, 1 - squash, 1 + squash) * sampleNumberSequence(self.Transparency, 0)
 		part.Parent = self._parent
 
 		local decal = Instance.new("Decal")
@@ -268,6 +269,7 @@ function Emitter._update(self: Emitter, dt: number)
 			particle._instance:Destroy()
 			table.remove(self._particles, i)
 		else
+			local alpha = particle._age / particle._life
 			particle._velocity *= 1 - self.Drag * dt
 
 			if self.WindAffectsDrag then
@@ -276,7 +278,9 @@ function Emitter._update(self: Emitter, dt: number)
 
 			particle._instance.Position += particle._velocity * self.TimeScale * dt
 
-			particle._instance.Size = Vector3.one * sampleNumberSequence(self.Size, particle._age / particle._life)
+			local squash = sampleNumberSequence(self.Squash, alpha)
+			particle._instance.Size = Vector3.new(1 + squash, 1 - squash, 1 + squash)
+				* sampleNumberSequence(self.Size, particle._age / particle._life)
 
 			particle._prevRot += particle._rotSpeed * self.TimeScale * dt
 			local lookCFrame = CFrame.lookAt(particle._instance.Position, self._camera.CFrame.Position)
@@ -309,8 +313,8 @@ function Emitter._update(self: Emitter, dt: number)
 				end
 			end
 
-			particle._decal.Transparency = sampleNumberSequence(self.Transparency, particle._age / particle._life)
-			particle._decal.Color3 = sampleColorSequence(self.Color, particle._age / particle._life)
+			particle._decal.Transparency = sampleNumberSequence(self.Transparency, alpha)
+			particle._decal.Color3 = sampleColorSequence(self.Color, alpha)
 		end
 	end
 end
