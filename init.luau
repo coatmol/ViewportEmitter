@@ -246,12 +246,16 @@ function Emitter._emit(self: Emitter, dt: number)
 		local squash = sampleNumberSequence(self.Squash, 0)
 		part.Size = Vector3.new(1 + squash, 1 - squash, 1 + squash) * sampleNumberSequence(self.Transparency, 0)
 		local origin = self._parent.Position
-		local regionSize = self._parent.Size
-		local offset = Vector3.new(
-			(math.random() - 0.5) * regionSize.X,
-			(math.random() - 0.5) * regionSize.Y,
-			(math.random() - 0.5) * regionSize.Z
-		)
+
+		local offset = Vector3.new(0, 0, 0)
+		if self._parent:IsA("BasePart") then
+			local regionSize = self._parent.Size
+			offset = Vector3.new(
+				(math.random() - 0.5) * regionSize.X,
+				(math.random() - 0.5) * regionSize.Y,
+				(math.random() - 0.5) * regionSize.Z
+			)
+		end
 
 		part.Position = origin + offset
 		part.Parent = self._parent
